@@ -1,5 +1,7 @@
 const express = require('express');
-require('dotenv');
+require('dotenv').config();
+
+const { handleError } = require('../src/helpers/errors');
 
 const app = express();
 
@@ -10,5 +12,9 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/films', require('./routes/films'));
+
+app.use((err, req, res, next) => {
+    handleError(err, res);
+});
 
 module.exports = app;

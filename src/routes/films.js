@@ -3,36 +3,36 @@ const path = require('path');
 
 const { readJSONData, writeJSONData } = require('../helpers/readwrite');
 const { filmValidator, searchValidator } = require('../helpers/validation')
-const search_algorithm = require('../helpers/search')
+const search_algorithm = require('../helpers/search');
+const { ErrorHandler } = require('../helpers/errors');
+const { nextTick } = require('process');
 
 const dataPath = path.join(__dirname, '../..', 'data', process.env.JSON_FILE)
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const { movies } = await readJSONData(dataPath);
-        res.json({ data: movies })
+        if (!movies) {
+            throw new ErrorHandler(500, 'No movies')
+        }
+        res.json({ 
+            status: 'succes',
+            data: movies 
+        })
 
     } catch (error) {
-        res.status(500).json({
-            succes: false,
-            error: {
-                message: error
-            }
-        })
+        next(error)
     }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         console.log(dataPath);
         const { movies, genres } = await readJSONData(dataPath);
         const { error } = filmValidator(req.body.data, genres);
-        if (error) return res.status(400).json({
-            succes: false,
-            error: {
-                message: error.details[0].message
-            }
-        });
+        if (error) {
+            throw new ErrorHandler(400, error.details[0].message)
+        }
 
         const newMovie = {
             id: movies.length + 1,
@@ -47,47 +47,37 @@ router.post('/', async (req, res) => {
 
         await writeJSONData(dataPath, data);
 
-        res.status(201).json({ data: movies })
+        res.status(201).json({ 
+            status: 'succes',
+            data: movies 
+        })
 
     } catch (error) {
-        res.status(500).json({
-            succes: false,
-            error: {
-                message: error
-            }
-        })
+        next(error)
     }
 });
 
-router.post('/search', async (req, res) => {
+router.post('/search', async (req, res, next) => {
     try {
         const { movies, genres } = await readJSONData(dataPath);
         const { error } = searchValidator(req.body.data, genres);
-        if (error) return res.status(400).json({
-            succes: false,
-            error: {
-                message: error.details[0].message
-            }
-        });
+        if (error) {
+            throw new ErrorHandler(400, error.details[0].message)
+        }
         const duration = parseInt(req.body.data.duration);
         const search_genres = req.body.data.genres;
 
         const searched = search_algorithm(movies, search_genres, duration);
 
         res.json({
-            succes: true,
+            status: 'succes',
             data: {
                 count: searched.length,
                 searched
             }
         })
     } catch (error) {
-        res.status(500).json({
-            succes: false,
-            error: {
-                message: error
-            }
-        })
+        next(error)
     }
 })
 
