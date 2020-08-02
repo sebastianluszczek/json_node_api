@@ -3,9 +3,9 @@ const path = require('path');
 
 const { readJSONData, writeJSONData } = require('../helpers/readwrite');
 const { filmValidator, searchValidator } = require('../helpers/validation')
-const search_combinations = require('../helpers/search')
+const search_algorithm = require('../helpers/search')
 
-const dataPath = path.join(__dirname, '../..', 'data', 'db.json')
+const dataPath = path.join(__dirname, '../..', 'data', process.env.JSON_FILE)
 
 router.get('/', async (req, res) => {
     try {
@@ -24,6 +24,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        console.log(dataPath);
         const { movies, genres } = await readJSONData(dataPath);
         const { error } = filmValidator(req.body.data, genres);
         if (error) return res.status(400).json({
@@ -71,31 +72,7 @@ router.post('/search', async (req, res) => {
         const duration = parseInt(req.body.data.duration);
         const search_genres = req.body.data.genres;
 
-        let searched;
-        if (duration) {
-            const duration_movies = movies.filter(movie => {
-                return (parseInt(movie.runtime) >= duration - 10 && parseInt(movie.runtime) <= duration + 10)
-            })
-            if (search_genres && search_genres.length > 0) {
-                // Duration with genres 
-                // - return all films in spec. duration (+/- 10 min) that contain specific genres
-                searched = search_combinations(duration_movies, search_genres);
-            } else {
-                // Only duration
-                // - return all films in spec. duration (+/- 10 min) 
-                searched = duration_movies;
-            }
-        } else {
-            if (search_genres && search_genres.length > 0) {
-                // Only genres
-                // - return all movies containing specific genres
-                searched = search_combinations(movies, search_genres);
-            } else {
-                // Without duration & genres
-                // - return one random movie
-                searched = movies[Math.floor(Math.random() * movies.length)];
-            }
-        }
+        const searched = search_algorithm(movies, search_genres, duration);
 
         res.json({
             succes: true,

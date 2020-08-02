@@ -16,5 +16,35 @@ const search_combinations = (movies, search_genres) => {
     return searched;
 }
 
-module.exports = search_combinations;
+const search_algorithm = (movies, search_genres, duration) => {
+
+    let searched;
+    if (duration) {
+        const duration_movies = movies.filter(movie => {
+            return (parseInt(movie.runtime) >= duration - 10 && parseInt(movie.runtime) <= duration + 10)
+        })
+        if (search_genres && search_genres.length > 0) {
+            // Duration & genres 
+            // - return all films in spec. duration (+/- 10 min) that contain specific genres
+            searched = search_combinations(duration_movies, search_genres);
+        } else {
+            // Only duration
+            // - return all films in spec. duration (+/- 10 min) 
+            searched = duration_movies;
+        }
+    } else {
+        if (search_genres && search_genres.length > 0) {
+            // Only genres
+            // - return all movies containing specific genres
+            searched = search_combinations(movies, search_genres);
+        } else {
+            // Without duration & genres
+            // - return one random movie
+            searched = [movies[Math.floor(Math.random() * movies.length)]];
+        }
+    }
+    return searched;
+}
+
+module.exports = search_algorithm;
 
